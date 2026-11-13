@@ -3,7 +3,7 @@
 **Your AI coding sessions, itemized.** Receipts reads the transcripts Claude Code already keeps on your machine and tells you what each session really cost, where the tokens went, how much the prompt cache saved you, and how much you lost when it went cold. Then it helps you pay less, and proves it.
 
 ```bash
-npx tokenreceipts
+npx codereceipts
 ```
 
 No account, no API key, no upload. Everything runs locally. Zero runtime dependencies.
@@ -50,20 +50,20 @@ receipts bench --task "fix the failing test" --plugin ../some-plugin --check "np
 Run it once, no install:
 
 ```bash
-npx tokenreceipts
+npx codereceipts
 ```
 
 Add the live status line and the trimmer to Claude Code (backs up your settings first):
 
 ```bash
-npx tokenreceipts install
+npx codereceipts install
 ```
 
-Or install it as a Claude Code plugin (trimmer, `/tokenreceipts:receipt` skill and a cheap `scout` search agent):
+Or install it as a Claude Code plugin (trimmer, `/codereceipts:receipt` skill and a cheap `scout` search agent):
 
 ```
-/plugin marketplace add salman-moussa/tokenreceipts
-/plugin install tokenreceipts@tokenreceipts
+/plugin marketplace add salman-moussa/codereceipts
+/plugin install codereceipts@codereceipts
 ```
 
 ## Commands
@@ -92,12 +92,12 @@ Your real bill can differ: subscription plans, discounts and gateways are not vi
 
 ## Privacy
 
-Receipts only reads files on your machine (`~/.claude/projects`) and writes to `~/.tokenreceipts`. It makes no network calls. The share card contains numbers and the session title, never code or file paths.
+Receipts only reads files on your machine (`~/.claude/projects`) and writes to `~/.codereceipts`. It makes no network calls. The share card contains numbers and the session title, never code or file paths.
 
 ## Turning things off
 
-- Trimmer off for one session: `TOKENRECEIPTS_TRIM=off claude`
-- Remove everything: `npx tokenreceipts uninstall`, or uninstall the plugin.
+- Trimmer off for one session: `CODERECEIPTS_TRIM=off claude`
+- Remove everything: `npx codereceipts uninstall`, or uninstall the plugin.
 
 ## License
 

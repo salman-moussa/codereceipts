@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-process.env.TOKENRECEIPTS_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'receipts-test-'));
+process.env.CODERECEIPTS_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'receipts-test-'));
 
 const { costOf, priceFor, missPenalty } = await import('../src/pricing.js');
 const { loadSession } = await import('../src/transcripts.js');

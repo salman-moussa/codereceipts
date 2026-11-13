@@ -7,8 +7,8 @@
 <meta name="description" content="See what every Claude Code session really cost, where the tokens went, what the prompt cache saved and lost, and trim noisy output with savings you can prove. Local, free, open source.">
 <meta property="og:title" content="Receipts · your AI coding sessions, itemized">
 <meta property="og:description" content="Real cost per session, cache-miss forensics, a live cache countdown, and a lossless output trimmer. Runs locally.">
-<meta property="og:image" content="https://salman-moussa.github.io/tokenreceipts/card.png">
-<meta property="og:url" content="https://salman-moussa.github.io/tokenreceipts/">
+<meta property="og:image" content="https://salman-moussa.github.io/codereceipts/card.png">
+<meta property="og:url" content="https://salman-moussa.github.io/codereceipts/">
 <meta name="twitter:card" content="summary_large_image">
 <style>
 :root {
@@ -137,14 +137,14 @@ footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--i
 <div class="wrap">
   <nav>
     <div class="mark">RECEIPTS</div>
-    <div class="links"><a href="#features">Features</a><a href="#install">Install</a><a href="https://github.com/salman-moussa/tokenreceipts">GitHub</a></div>
+    <div class="links"><a href="#features">Features</a><a href="#install">Install</a><a href="https://github.com/salman-moussa/codereceipts">GitHub</a></div>
   </nav>
 
   <div class="hero">
     <div>
       <h1>Your AI coding sessions, itemized.</h1>
       <p class="lede">Receipts reads the transcripts Claude Code already keeps on your machine and shows what every session really cost, where the tokens went, what the prompt cache saved, and what you lost when it went cold. Then it helps you pay less, and proves it.</p>
-      <div class="cmd"><span id="cmdText">npx tokenreceipts</span><button type="button" data-copy="npx tokenreceipts">Copy</button></div>
+      <div class="cmd"><span id="cmdText">npx codereceipts</span><button type="button" data-copy="npx codereceipts">Copy</button></div>
       <div class="sub-cta">Free and open source. Runs locally. No account, no upload.</div>
     </div>
     <div class="paper" aria-label="Example receipt">
@@ -235,7 +235,7 @@ $9.80 <span class="d">$5.10/h</span> <span class="d">│</span> cache 91% <span 
         <div><div class="label">What it counts</div><div class="term"><pre>raw output ......... 3,605 tok
 kept ................. 104 tok
 <span class="g">saved .............. 3,501 tok</span>
-<span class="d">full log: ~/.tokenreceipts/raw/</span>
+<span class="d">full log: ~/.codereceipts/raw/</span>
 
 <span class="d">A token kept out early is not
 re-read by any later turn, up to
@@ -278,10 +278,10 @@ happened.</span></pre></div></div>
     <h2>Pick one. Takes a minute.</h2>
     <p class="intro">Requires Node 20 or newer and Claude Code.</p>
     <div class="install">
-      <div class="card"><h4>Just look</h4><p>Print the receipt for your latest session. Nothing is installed.</p><code>npx tokenreceipts</code></div>
-      <div class="card"><h4>Status line + trimmer</h4><p>Adds both to Claude Code. Your settings are backed up first.</p><code>npx tokenreceipts install</code></div>
-      <div class="card"><h4>Claude Code plugin</h4><p>Trimmer, the receipt skill and the scout agent.</p><code>/plugin marketplace add salman-moussa/tokenreceipts
-/plugin install tokenreceipts@tokenreceipts</code></div>
+      <div class="card"><h4>Just look</h4><p>Print the receipt for your latest session. Nothing is installed.</p><code>npx codereceipts</code></div>
+      <div class="card"><h4>Status line + trimmer</h4><p>Adds both to Claude Code. Your settings are backed up first.</p><code>npx codereceipts install</code></div>
+      <div class="card"><h4>Claude Code plugin</h4><p>Trimmer, the receipt skill and the scout agent.</p><code>/plugin marketplace add salman-moussa/codereceipts
+/plugin install codereceipts@codereceipts</code></div>
     </div>
   </section>
 
@@ -292,13 +292,13 @@ happened.</span></pre></div></div>
       <div><b>From your own transcripts</b>Claude Code logs the exact token usage of every API call. Receipts reads those files and counts each call once.</div>
       <div><b>List prices, per model</b>Fresh input, cache writes at 1.25x (5-minute) or 2x (1-hour), cache reads priced per model, output, fast mode at 2x. Subagents included.</div>
       <div><b>Conservative savings</b>Trim savings count only what Claude would really have read, and stop at the next compaction.</div>
-      <div><b>Private</b>No network calls. Reads <code>~/.claude/projects</code>, writes to <code>~/.tokenreceipts</code>. Plans and discounts can make your real bill differ.</div>
+      <div><b>Private</b>No network calls. Reads <code>~/.claude/projects</code>, writes to <code>~/.codereceipts</code>. Plans and discounts can make your real bill differ.</div>
     </div>
   </section>
 
   <footer>
     <span>Receipts · MIT licensed · Made by Salman Moussa</span>
-    <a href="https://github.com/salman-moussa/tokenreceipts">github.com/salman-moussa/tokenreceipts</a>
+    <a href="https://github.com/salman-moussa/codereceipts">github.com/salman-moussa/codereceipts</a>
   </footer>
 </div>
 <script>

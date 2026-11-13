@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-process.env.TOKENRECEIPTS_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'receipts-test-'));
+process.env.CODERECEIPTS_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'receipts-test-'));
 
 const { trim, classify } = await import('../src/trim.js');
 const { handle } = await import('../src/hook.js');
@@ -123,7 +123,7 @@ test('install: adds status line and hook, keeps a foreign status line, uninstall
   assert.equal(kept.hooks.PostToolUse.length, 2);
   assert.deepEqual(withoutReceipts(kept), mine);
 
-  const viaPlugin = withReceipts({ enabledPlugins: { 'tokenreceipts@tokenreceipts': true } }, '/x').settings;
+  const viaPlugin = withReceipts({ enabledPlugins: { 'codereceipts@codereceipts': true } }, '/x').settings;
   assert.equal(viaPlugin.hooks, undefined, 'plugin already provides the hook');
 });
 
@@ -141,10 +141,10 @@ test('bench: averages per arm, ignores failed runs, shows delta vs baseline', ()
   const runs = [
     { arm: 'baseline', run: 1, cost: 0.2, turns: 6, ms: 30000, pass: true, error: '', trimmed: 0, hitRate: 0.8 },
     { arm: 'baseline', run: 2, cost: 0.4, turns: 8, ms: 50000, pass: false, error: '', trimmed: 0, hitRate: 0.8 },
-    { arm: 'tokenreceipts', run: 1, cost: 0.15, turns: 5, ms: 25000, pass: true, error: '', trimmed: 3000, hitRate: 0.9 },
-    { arm: 'tokenreceipts', run: 2, cost: 0, turns: 0, ms: 1000, pass: null, error: 'auth', trimmed: 0, hitRate: 0 },
+    { arm: 'codereceipts', run: 1, cost: 0.15, turns: 5, ms: 25000, pass: true, error: '', trimmed: 3000, hitRate: 0.9 },
+    { arm: 'codereceipts', run: 2, cost: 0, turns: 0, ms: 1000, pass: null, error: 'auth', trimmed: 0, hitRate: 0 },
   ];
-  const s = summarize(runs, ['baseline', 'tokenreceipts']);
+  const s = summarize(runs, ['baseline', 'codereceipts']);
   assert.equal(s[0].cost, 0.30000000000000004);
   assert.equal(s[0].passRate, 0.5);
   assert.equal(s[1].ok, 1);

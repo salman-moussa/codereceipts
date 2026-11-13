@@ -17,7 +17,7 @@ const shownLimit = () => Number(process.env.BASH_MAX_OUTPUT_LENGTH) || 30_000;
  * @returns {object | null} the hook response, or null to leave the output alone
  */
 export function handle(input) {
-  if (process.env.TOKENRECEIPTS_TRIM === 'off') return null;
+  if (process.env.CODERECEIPTS_TRIM === 'off') return null;
   if (input?.hook_event_name !== 'PostToolUse' || input.tool_name !== 'Bash') return null;
   const resp = input.tool_response;
   if (!resp || typeof resp !== 'object' || resp.isImage) return null;

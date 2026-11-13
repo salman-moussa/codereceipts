@@ -1,12 +1,12 @@
 {
-  "name": "tokenreceipts",
+  "name": "codereceipts",
   "description": "Receipts: see what your coding sessions really cost and pay less.",
   "owner": {
     "name": "Salman Moussa"
   },
   "plugins": [
     {
-      "name": "tokenreceipts",
+      "name": "codereceipts",
       "source": "./",
       "description": "Real cost per session, cache-miss forensics, a context X-ray page, and a lossless output trimmer."
     }

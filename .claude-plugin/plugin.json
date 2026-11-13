@@ -1,13 +1,13 @@
 {
-  "name": "tokenreceipts",
+  "name": "codereceipts",
   "displayName": "Receipts",
   "version": "0.1.0",
   "description": "Receipts for your coding sessions: real cost, cache forensics, a context X-ray, and a lossless output trimmer that proves what it saves.",
   "author": {
     "name": "Salman Moussa"
   },
-  "homepage": "https://github.com/salman-moussa/tokenreceipts",
-  "repository": "https://github.com/salman-moussa/tokenreceipts",
+  "homepage": "https://github.com/salman-moussa/codereceipts",
+  "repository": "https://github.com/salman-moussa/codereceipts",
   "license": "MIT",
   "keywords": ["cost", "tokens", "prompt-caching", "receipts", "context"]
 }

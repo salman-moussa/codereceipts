@@ -1,11 +1,11 @@
 {
-  "name": "tokenreceipts",
+  "name": "codereceipts",
   "version": "0.1.0",
   "description": "Receipts for your AI coding sessions: what Claude Code really cost, where the tokens went, and a trimmer that proves what it saves.",
   "type": "module",
   "bin": {
     "receipts": "cli/receipts.js",
-    "tokenreceipts": "cli/receipts.js"
+    "codereceipts": "cli/receipts.js"
   },
   "files": [
     "cli",
@@ -37,13 +37,13 @@
   ],
   "author": "Salman Moussa",
   "license": "MIT",
-  "homepage": "https://salman-moussa.github.io/tokenreceipts/",
+  "homepage": "https://salman-moussa.github.io/codereceipts/",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/salman-moussa/tokenreceipts.git"
+    "url": "git+https://github.com/salman-moussa/codereceipts.git"
   },
   "bugs": {
-    "url": "https://github.com/salman-moussa/tokenreceipts/issues"
+    "url": "https://github.com/salman-moussa/codereceipts/issues"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

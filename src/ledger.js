@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 
 export function home() {
-  return process.env.TOKENRECEIPTS_HOME || path.join(os.homedir(), '.tokenreceipts');
+  return process.env.CODERECEIPTS_HOME || path.join(os.homedir(), '.codereceipts');
 }
 
 const ledgerFile = () => path.join(home(), 'ledger.jsonl');

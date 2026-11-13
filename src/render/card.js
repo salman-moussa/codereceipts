@@ -93,7 +93,7 @@ export function cardSvg(a) {
   ${body}
   ${bars}
   <text x="${W / 2}" y="${by + 110}" text-anchor="middle" font-size="24" fill="#6b6a64">${esc(a.id.slice(0, 8))} · list prices · computed locally</text>
-  <text x="${W / 2}" y="${H - 44}" text-anchor="middle" font-size="26" fill="#a9a8a2">npx tokenreceipts</text>
+  <text x="${W / 2}" y="${H - 44}" text-anchor="middle" font-size="26" fill="#a9a8a2">npx codereceipts</text>
 </svg>`;
 }
 

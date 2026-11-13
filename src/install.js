@@ -11,7 +11,7 @@ const OURS = /^node "[^"]*[\\/]cli[\\/]receipts\.js" (?:hook|statusline)$/;
 const isOursCmd = (/** @type {any} */ cmd) => typeof cmd === 'string' && OURS.test(cmd.trim());
 
 /**
- * Copy the CLI to ~/.tokenreceipts/app so settings never point at an npx
+ * Copy the CLI to ~/.codereceipts/app so settings never point at an npx
  * cache folder that disappears when the cache is cleared or a new version
  * comes out.
  */
@@ -46,7 +46,7 @@ function writeSettings(/** @type {any} */ settings) {
 }
 
 /** @param {any} settings */
-const pluginEnabled = (settings) => Object.entries(settings.enabledPlugins || {}).some(([k, v]) => k.startsWith('tokenreceipts@') && v);
+const pluginEnabled = (settings) => Object.entries(settings.enabledPlugins || {}).some(([k, v]) => k.startsWith('codereceipts@') && v);
 
 /** Remove only our hook entries; drop a matcher group only if it held nothing else. */
 function stripHooks(/** @type {any[]} */ groups) {
@@ -83,7 +83,7 @@ export function withReceipts(settings, cli) {
     s.hooks ??= {};
     s.hooks.PostToolUse ??= [];
     s.hooks.PostToolUse.push({ matcher: 'Bash', hooks: [{ type: 'command', command: `${cmd} hook`, timeout: 15 }] });
-    notes.push('Trimmer: noisy output of successful commands is trimmed, errors kept, full output saved to ~/.tokenreceipts/raw.');
+    notes.push('Trimmer: noisy output of successful commands is trimmed, errors kept, full output saved to ~/.codereceipts/raw.');
   }
   return { settings: s, notes };
 }
@@ -105,7 +105,7 @@ export function install() {
   writeSettings(settings);
   console.log(`Updated ${settingsFile()} (your original is kept in settings.json.receipts-backup)\n`);
   for (const n of notes) console.log(`  - ${n}`);
-  console.log('\nRestart Claude Code to see it. Turn the trimmer off any time with TOKENRECEIPTS_TRIM=off.');
+  console.log('\nRestart Claude Code to see it. Turn the trimmer off any time with CODERECEIPTS_TRIM=off.');
 }
 
 export function uninstall() {

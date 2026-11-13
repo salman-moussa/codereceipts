@@ -216,23 +216,23 @@ $9.80 <span class="d">$5.10/h</span> <span class="d">│</span> cache 91% <span 
       <div>
         <div class="num">03 · Lossless trimmer</div>
         <h3>Drop the noise. Keep every error. Lose nothing.</h3>
-        <p>A hook shrinks test runs, installs, builds and logs before Claude reads them. Passing lines collapse, every failure and stack trace stays, and the full output is saved to disk with its path shown to Claude.</p>
-        <p>A real run of 401 tests with one failure: <b>3,808 tokens down to 305</b>.</p>
+        <p>A hook shrinks the output of test suites, installs, builds and logs before Claude reads it. Repeated lines collapse, every warning and error stays, and the full output is saved to disk with its path shown to Claude. Reads like <code>cat</code>, <code>grep</code> and <code>git diff</code> are never touched.</p>
+        <p>A real passing run of 401 tests: <b>3,605 tokens down to 104</b>.</p>
       </div>
       <div class="compare">
         <div><div class="label">What Claude reads</div><div class="term"><pre><span class="d">✔ renders product card 0
 ✔ renders product card 1
   … 297 similar lines
-✔ renders product card 299</span>
-<span class="r">✖ total includes tax</span>
-<span class="r">  AssertionError: 100 !== 110</span>
-<span class="d">    at cart.test.js:5:41
-ℹ pass 400
-ℹ fail 1</span>
-<span class="g">[receipts] trimmed ~3.8K -> ~305 tokens</span></pre></div></div>
-        <div><div class="label">What it counts</div><div class="term"><pre>raw output ......... 3,808 tok
-kept ................. 305 tok
-<span class="g">saved .............. 3,503 tok</span>
+✔ renders product card 299
+✔ total includes tax
+✔ formats price 0
+  … 97 similar lines</span>
+ℹ tests 401
+ℹ pass 401
+<span class="g">[receipts] trimmed ~3.6K -> ~104 tokens</span></pre></div></div>
+        <div><div class="label">What it counts</div><div class="term"><pre>raw output ......... 3,605 tok
+kept ................. 104 tok
+<span class="g">saved .............. 3,501 tok</span>
 <span class="d">full log: ~/.tokenreceipts/raw/</span>
 
 <span class="d">A token kept out early is not
@@ -247,7 +247,7 @@ happened.</span></pre></div></div>
       <div>
         <div class="num">04 · A/B bench</div>
         <h3>Test any plugin's claims on your own repo.</h3>
-        <p>Run the same task with and without a plugin in throwaway git worktrees. Compare real cost, turns, time and whether your tests pass.</p>
+        <p>Run the same task with and without a plugin in throwaway local clones of your repo, with no remotes. Compare real cost, turns, time and whether your tests pass.</p>
       </div>
       <div class="term"><pre><span class="d">$</span> receipts bench \
     --task "fix the failing test" \

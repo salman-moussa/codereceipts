@@ -2,10 +2,28 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { claudeDir } from './transcripts.js';
+import { home } from './ledger.js';
 
-const MARK = 'receipts.js';
-const cliPath = () => fileURLToPath(new URL('../cli/receipts.js', import.meta.url)).replace(/\\/g, '/');
 const settingsFile = () => path.join(claudeDir(), 'settings.json');
+
+/** Our own commands, and nothing else: node "<...>/cli/receipts.js" hook|statusline */
+const OURS = /^node "[^"]*[\\/]cli[\\/]receipts\.js" (?:hook|statusline)$/;
+const isOursCmd = (/** @type {any} */ cmd) => typeof cmd === 'string' && OURS.test(cmd.trim());
+
+/**
+ * Copy the CLI to ~/.tokenreceipts/app so settings never point at an npx
+ * cache folder that disappears when the cache is cleared or a new version
+ * comes out.
+ */
+function installApp() {
+  const src = fileURLToPath(new URL('..', import.meta.url));
+  const dest = path.join(home(), 'app');
+  if (path.resolve(src) !== path.resolve(dest)) {
+    fs.rmSync(dest, { recursive: true, force: true });
+    for (const part of ['cli', 'src', 'package.json']) fs.cpSync(path.join(src, part), path.join(dest, part), { recursive: true });
+  }
+  return path.join(dest, 'cli', 'receipts.js').replace(/\\/g, '/');
+}
 
 function readSettings() {
   try {
@@ -16,46 +34,56 @@ function readSettings() {
   }
 }
 
-/** @param {any} settings */
-function writeSettings(settings) {
+/** Keep the first backup forever, then write through a temp file so a crash cannot leave half a file. */
+function writeSettings(/** @type {any} */ settings) {
   const file = settingsFile();
-  if (fs.existsSync(file)) fs.copyFileSync(file, `${file}.receipts-backup`);
+  const backup = `${file}.receipts-backup`;
+  if (fs.existsSync(file) && !fs.existsSync(backup)) fs.copyFileSync(file, backup);
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(settings, null, 2) + '\n');
+  const tmp = `${file}.receipts-tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(settings, null, 2) + '\n');
+  fs.renameSync(tmp, file);
 }
 
 /** @param {any} settings */
 const pluginEnabled = (settings) => Object.entries(settings.enabledPlugins || {}).some(([k, v]) => k.startsWith('tokenreceipts@') && v);
 
-/** @param {any} entry */
-const isOurs = (entry) => JSON.stringify(entry || '').includes(MARK);
+/** Remove only our hook entries; drop a matcher group only if it held nothing else. */
+function stripHooks(/** @type {any[]} */ groups) {
+  return groups.flatMap((g) => {
+    const before = g.hooks || [];
+    const hooks = before.filter((/** @type {any} */ h) => !isOursCmd(h.command));
+    if (hooks.length === before.length) return [g];
+    return hooks.length ? [{ ...g, hooks }] : [];
+  });
+}
 
 /**
  * Pure: settings in, settings out. Adds the status line (unless another one
  * is set) and the trimmer hook (unless the plugin already provides it).
  * @param {any} settings
- * @param {string} cli
+ * @param {string} cli path to cli/receipts.js
  */
 export function withReceipts(settings, cli) {
   const s = structuredClone(settings || {});
   const notes = [];
   const cmd = `node "${cli}"`;
 
-  if (!s.statusLine || isOurs(s.statusLine)) {
+  if (!s.statusLine || isOursCmd(s.statusLine.command)) {
     s.statusLine = { type: 'command', command: `${cmd} statusline`, refreshInterval: 5 };
     notes.push('Status line: spend, burn rate, cache countdown, context use.');
   } else {
     notes.push(`Status line: you already have one, so it was left alone. To use Receipts' instead, set statusLine.command to: ${cmd} statusline`);
   }
 
+  if (s.hooks?.PostToolUse) s.hooks.PostToolUse = stripHooks(s.hooks.PostToolUse);
   if (pluginEnabled(s)) {
     notes.push('Trimmer: provided by the Receipts plugin, nothing to add.');
   } else {
     s.hooks ??= {};
     s.hooks.PostToolUse ??= [];
-    s.hooks.PostToolUse = s.hooks.PostToolUse.filter((/** @type {any} */ m) => !isOurs(m));
     s.hooks.PostToolUse.push({ matcher: 'Bash', hooks: [{ type: 'command', command: `${cmd} hook`, timeout: 15 }] });
-    notes.push('Trimmer: noisy command output is trimmed, errors kept, full output saved to ~/.tokenreceipts/raw.');
+    notes.push('Trimmer: noisy output of successful commands is trimmed, errors kept, full output saved to ~/.tokenreceipts/raw.');
   }
   return { settings: s, notes };
 }
@@ -63,9 +91,9 @@ export function withReceipts(settings, cli) {
 /** @param {any} settings */
 export function withoutReceipts(settings) {
   const s = structuredClone(settings || {});
-  if (isOurs(s.statusLine)) delete s.statusLine;
+  if (isOursCmd(s.statusLine?.command)) delete s.statusLine;
   if (s.hooks?.PostToolUse) {
-    s.hooks.PostToolUse = s.hooks.PostToolUse.filter((/** @type {any} */ m) => !isOurs(m));
+    s.hooks.PostToolUse = stripHooks(s.hooks.PostToolUse);
     if (!s.hooks.PostToolUse.length) delete s.hooks.PostToolUse;
     if (!Object.keys(s.hooks).length) delete s.hooks;
   }
@@ -73,14 +101,14 @@ export function withoutReceipts(settings) {
 }
 
 export function install() {
-  const { settings, notes } = withReceipts(readSettings(), cliPath());
+  const { settings, notes } = withReceipts(readSettings(), installApp());
   writeSettings(settings);
-  console.log(`Updated ${settingsFile()} (backup: settings.json.receipts-backup)\n`);
+  console.log(`Updated ${settingsFile()} (your original is kept in settings.json.receipts-backup)\n`);
   for (const n of notes) console.log(`  - ${n}`);
   console.log('\nRestart Claude Code to see it. Turn the trimmer off any time with TOKENRECEIPTS_TRIM=off.');
 }
 
 export function uninstall() {
   writeSettings(withoutReceipts(readSettings()));
-  console.log(`Removed Receipts from ${settingsFile()} (backup: settings.json.receipts-backup).`);
+  console.log(`Removed Receipts from ${settingsFile()}.`);
 }

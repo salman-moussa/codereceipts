@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { usd, num, dur, date, shortModel, pct } from '../format.js';
+import { usd, num, dur, date, shortModel, pct, cut } from '../format.js';
 import { barcode } from './receipt.js';
 
 const W = 1080;
@@ -9,7 +9,7 @@ const PAPER_W = 780;
 const CHARS = 38;
 
 /** @param {string} s */
-const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const esc = (s) => s.replace(/\p{Cc}/gu, ' ').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /** @param {string} l @param {string} r @param {number} [chars] */
 function row(l, r, chars = CHARS) {
@@ -41,7 +41,7 @@ export function cardSvg(a) {
   add('R E C E I P T S', 'title');
   add('for your AI coding sessions', 'sub');
   rule('=');
-  add(row('SESSION', a.title.slice(0, 24)));
+  add(row('SESSION', cut(a.title, 24)));
   add(row('DATE', date(a.start).slice(0, 10)));
   add(row('DURATION', dur(a.durationMs)));
   add(row('API CALLS', num(a.totals.calls)));

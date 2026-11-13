@@ -1,4 +1,4 @@
-import { usd, num, dur, date, shortModel, pct, CAUSE_TEXT } from '../format.js';
+import { usd, num, dur, date, shortModel, pct, cut, CAUSE_TEXT } from '../format.js';
 import { tips } from '../tips.js';
 
 const W = 46;
@@ -44,7 +44,7 @@ export function renderReceipt(a, opts = {}) {
   const t = a.totals;
 
   L.push('', center(c.bold('R E C E I P T S')), center(c.dim('for your AI coding sessions')), rule('='));
-  L.push(row('SESSION', a.title.slice(0, 30)));
+  L.push(row('SESSION', cut(a.title, 30)));
   if (a.project) L.push(row('FOLDER', a.project.slice(0, 30)));
   L.push(row('STARTED', date(a.start)), row('DURATION', dur(a.durationMs)), row('API CALLS', num(t.calls)), rule());
 
@@ -54,7 +54,7 @@ export function renderReceipt(a, opts = {}) {
     L.push(row('Main conversation', usd(a.mainCost)));
     const agentUsd = a.agents.reduce((s, g) => s + g.cost, 0);
     L.push(row(`${a.agents.length} subagent${a.agents.length > 1 ? 's' : ''}`, usd(agentUsd)));
-    for (const g of a.agents.slice(0, 3)) L.push(c.dim(row(`  ${g.description || g.type}`.slice(0, 32), usd(g.cost))));
+    for (const g of a.agents.slice(0, 3)) L.push(c.dim(row(cut(`  ${g.description || g.type}`, 32), usd(g.cost))));
   }
 
   L.push(rule());

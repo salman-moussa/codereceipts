@@ -1,3 +1,10 @@
+/** Shorten text by characters (not UTF-16 units) and drop control characters. */
+export function cut(s, n) {
+  const clean = String(s ?? '').replace(/\p{Cc}/gu, ' ');
+  const chars = [...clean];
+  return chars.length > n ? chars.slice(0, n).join('') : clean;
+}
+
 export function usd(n) {
   if (!Number.isFinite(n)) return '$0.00';
   const abs = Math.abs(n);

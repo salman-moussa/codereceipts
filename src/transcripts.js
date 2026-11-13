@@ -3,8 +3,9 @@ import path from 'node:path';
 import os from 'node:os';
 import readline from 'node:readline';
 import { home } from './ledger.js';
+import { cut } from './format.js';
 
-const CACHE_VERSION = 1;
+const CACHE_VERSION = 2;
 
 export function claudeDir() {
   return process.env.CLAUDE_CONFIG_DIR || path.join(os.homedir(), '.claude');
@@ -135,11 +136,11 @@ async function parseFile(file, agent, into) {
       }
       if (!into.title && agent === 'main' && !e.isMeta) {
         const text = e.message.content.find((/** @type {any} */ c) => c.type === 'text')?.text;
-        if (text && !text.startsWith('<')) into.title = text.slice(0, 80);
+        if (text && !text.startsWith('<')) into.title = text;
       }
     }
     if (e.type === 'user' && typeof e.message?.content === 'string' && !into.title && agent === 'main' && !e.isMeta) {
-      if (!e.message.content.startsWith('<')) into.title = e.message.content.slice(0, 80);
+      if (!e.message.content.startsWith('<')) into.title = e.message.content;
     }
   }
 }
@@ -205,7 +206,7 @@ export async function loadSession(file) {
   }
   s.calls.sort((a, b) => a.ts - b.ts);
   s.results.sort((a, b) => a.ts - b.ts);
-  if (!s.title) s.title = path.basename(s.cwd || '') || id.slice(0, 8);
+  s.title = cut(s.title || path.basename(s.cwd || '') || id.slice(0, 8), 80).trim();
   try {
     fs.mkdirSync(path.dirname(cacheFile), { recursive: true });
     fs.writeFileSync(cacheFile, JSON.stringify({ v: CACHE_VERSION, stamp, session: s }));

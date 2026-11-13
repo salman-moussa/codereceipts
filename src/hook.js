@@ -1,9 +1,10 @@
 // PostToolUse hook for Bash: trims noisy output before Claude reads it,
 // saves the full output to disk, and records the saving in the ledger.
 // It must never break a tool call, so every failure exits quietly.
+// Only successful commands reach PostToolUse: Claude Code sends failed ones
+// to PostToolUseFailure, which cannot replace output, so those stay as they are.
 import { trim } from './trim.js';
-import fs from 'node:fs';
-import { record, saveRaw, rawPath } from './ledger.js';
+import { record, saveRaw } from './ledger.js';
 import { tokensOf } from './analyze.js';
 import { num } from './format.js';
 
@@ -27,11 +28,10 @@ export function handle(input) {
   const out = trim(stdout, command);
   const err = trim(stderr, command);
   if (!out && !err) return null;
-  // Installed both as a plugin and in settings: only the first copy acts.
-  if (input.tool_use_id && fs.existsSync(rawPath(input.session_id, input.tool_use_id))) return null;
 
   const raw = stderr ? `${stdout}\n--- stderr ---\n${stderr}` : stdout;
   const rawFile = saveRaw(input.session_id, input.tool_use_id, raw);
+  if (!rawFile) return null; // another copy of this hook (plugin and settings) already handled it
   const counted = (/** @type {number} */ chars) => tokensOf(Math.min(chars, shownLimit()));
   const rawTokens = counted(stdout.length) + counted(stderr.length);
   const keptTokens = counted(out ? out.keptChars : stdout.length) + counted(err ? err.keptChars : stderr.length);

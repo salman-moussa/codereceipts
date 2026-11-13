@@ -55,7 +55,13 @@ export function readLedger(session) {
 export function saveRaw(session, toolUseId, text) {
   const file = rawPath(session, toolUseId);
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, text);
+  try {
+    // 'wx' fails if the file exists: when two copies of the hook run at once, only one wins.
+    fs.writeFileSync(file, text, { flag: 'wx' });
+  } catch (err) {
+    if (/** @type {any} */ (err).code === 'EEXIST') return null;
+    throw err;
+  }
   return file;
 }
 

@@ -34,7 +34,8 @@ const TABLE = [
 export function priceFor(model) {
   if (!model) return null;
   const id = model.replace(/^(anthropic\.|us\.anthropic\.|eu\.anthropic\.)/, '').replace(/\[1m\]$/, '');
-  for (const [prefix, price] of TABLE) if (id.startsWith(prefix)) return price;
+  // "claude-fable-5-20261101" must match claude-fable-5, not claude-fable-5-2.
+  for (const [prefix, price] of TABLE) if (id.startsWith(prefix) && !/\d/.test(id[prefix.length] || '')) return price;
   return null;
 }
 
@@ -85,12 +86,19 @@ export function costOf(u, model) {
   return c;
 }
 
-/** Price of re-caching `tokens` instead of reading them: what one cache miss costs. */
-export function missPenalty(tokens, model, ttl = '5m') {
+/**
+ * Price of re-caching `tokens` instead of reading them: what one cache miss costs.
+ * @param {number} tokens
+ * @param {string} model
+ * @param {string} [ttl]
+ * @param {{ prompt?: number, fast?: boolean }} [opts] prompt size picks the long-context tier
+ */
+export function missPenalty(tokens, model, ttl = '5m', opts = {}) {
   const p = priceFor(model);
   if (!p) return 0;
+  const tier = p.longContext && (opts.prompt ?? tokens) > p.longContext.above ? p.longContext.input / p.input : 1;
   const writeMult = ttl === '1h' ? 2 : 1.25;
-  return (tokens * (p.input * writeMult - p.read)) / 1e6;
+  return ((tokens * (p.input * writeMult - p.read) * tier) / 1e6) * (opts.fast ? 2 : 1);
 }
 
 /** Cost of carrying `tokens` through one later call as a cache read. */

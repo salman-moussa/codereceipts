@@ -34,7 +34,7 @@ export function render(input, trims, now) {
   if (pc && pc.caching_observed) {
     const hit = pc.hit_ratio == null ? '' : `${Math.round(pc.hit_ratio * 100)}% `;
     const model = input?.model?.id;
-    const rebuild = pc.recache_tokens_if_cold ? missPenalty(pc.recache_tokens_if_cold, model, pc.ttl) : 0;
+    const rebuild = pc.recache_tokens_if_cold ? missPenalty(pc.recache_tokens_if_cold, model, pc.ttl, { fast: !!input?.fast_mode }) : 0;
     const left = pc.expires_at ? pc.expires_at - now : 0;
     let cache = `cache ${hit}`;
     if (pc.warm && left > 0) {

@@ -83,7 +83,7 @@ export function analyze(s, trims = []) {
         else if (c.model !== p.model) miss = 'model-switch';
         else miss = 'prefix-changed';
         if (lostTokens > 0) {
-          const lost = miss === 'compaction' ? 0 : missPenalty(lostTokens, c.model, ttl);
+          const lost = miss === 'compaction' ? 0 : missPenalty(lostTokens, c.model, ttl, { prompt, fast: u.speed === 'fast' });
           misses.push({ ts: c.ts, model: c.model, tokens: lostTokens, cause: miss, lost, gapMs });
         }
       }

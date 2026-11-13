@@ -1,0 +1,18 @@
+{
+  "description": "Receipts trimmer: shrinks noisy command output, keeps errors, saves the full output to disk",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/cli/receipts.js", "hook"],
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

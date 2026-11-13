@@ -6,7 +6,7 @@ import path from 'node:path';
 
 process.env.TOKENRECEIPTS_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'receipts-test-'));
 
-const { trim } = await import('../src/trim.js');
+const { trim, classify } = await import('../src/trim.js');
 const { handle } = await import('../src/hook.js');
 const { readLedger } = await import('../src/ledger.js');
 const { render } = await import('../src/statusline.js');
@@ -38,6 +38,29 @@ test('trim: leaves deliberate reads, quiet commands and small output alone', () 
   assert.equal(trim(testLog(), 'ls -la'), null, 'not noisy and not huge');
   assert.equal(trim('short output', 'npm test'), null);
   assert.ok(trim('line\n'.repeat(20000), 'some-script'), 'huge output from any command');
+});
+
+test('trim: Windows line endings keep every line, progress redraws keep the last state', () => {
+  let s = '';
+  for (let i = 0; i < 400; i++) s += `PASS test ${i}\r\n`;
+  s += 'FAIL checkout total\r\nDownloading 10%\rDownloading 100%\r\n';
+  const r = trim(s, 'dotnet test');
+  assert.ok(r);
+  assert.match(r.text, /FAIL checkout total/);
+  assert.match(r.text, /Downloading 100%/);
+  assert.doesNotMatch(r.text, /Downloading 10%/);
+});
+
+test('trim: a command is classified by each of its parts, not by words inside it', () => {
+  const big = 'x\n'.repeat(40_000);
+  assert.deepEqual(classify('grep -rn webpack src/'), { read: true, noisy: false });
+  assert.equal(classify('cd src && cat big.js').read, true);
+  assert.equal(trim(big, 'cd src && cat big.js'), null, 'a read is never trimmed, however big');
+  assert.equal(classify('npm test | grep FAIL').read, true, 'already filtered by the user');
+  assert.equal(classify('CI=1 npx jest --ci').noisy, true);
+  assert.equal(classify('cd app && pnpm run build').noisy, true);
+  assert.equal(classify('git log -p').read, true);
+  assert.equal(classify('echo webpack').noisy, false);
 });
 
 test('trim: long logs keep head, tail and errors with context', () => {
@@ -102,6 +125,16 @@ test('install: adds status line and hook, keeps a foreign status line, uninstall
 
   const viaPlugin = withReceipts({ enabledPlugins: { 'tokenreceipts@tokenreceipts': true } }, '/x').settings;
   assert.equal(viaPlugin.hooks, undefined, 'plugin already provides the hook');
+});
+
+test('install: removes only its own hook, never a user hook in the same group or with a similar name', () => {
+  const userHook = { type: 'command', command: 'node ./scripts/receipts.js --mine' };
+  const shared = { matcher: 'Bash', hooks: [userHook, { type: 'command', command: 'node "/x/cli/receipts.js" hook', timeout: 15 }] };
+  const out = withoutReceipts({ hooks: { PostToolUse: [shared] }, statusLine: { type: 'command', command: 'node ./receipts.js' } });
+  assert.deepEqual(out.hooks.PostToolUse, [{ matcher: 'Bash', hooks: [userHook] }]);
+  assert.equal(out.statusLine.command, 'node ./receipts.js', 'a foreign status line stays');
+  const kept = withReceipts({ statusLine: { type: 'command', command: 'node ./receipts.js' } }, '/x/cli/receipts.js').settings;
+  assert.equal(kept.statusLine.command, 'node ./receipts.js');
 });
 
 test('bench: averages per arm, ignores failed runs, shows delta vs baseline', () => {

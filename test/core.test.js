@@ -32,6 +32,16 @@ test('pricing: fast mode doubles, unknown models are flagged, prefixes resolve',
   assert.equal(priceFor('us.anthropic.claude-sonnet-4-6')?.input, 3);
   close(costOf({ input_tokens: 200_000 }, 'claude-haiku-5-5').input, 0.1, 'haiku long-context tier');
   close(missPenalty(1e6, 'claude-opus-5-5', '5m'), 4.8, 'miss penalty');
+  close(missPenalty(200_000, 'claude-haiku-5-5', '5m', { prompt: 200_000 }), 0.115, 'long-context miss');
+  close(missPenalty(1e6, 'claude-opus-5-5', '5m', { fast: true }), 9.6, 'fast-mode miss');
+  assert.equal(priceFor('claude-fable-5-20261101')?.input, 10, 'dated id is not the next version');
+});
+
+test('titles are cut by character and cleaned of control characters', async () => {
+  const { cut } = await import('../src/format.js');
+  assert.equal(cut('ab😀cd', 3), 'ab😀');
+  assert.equal(cut('a\u0007b', 10), 'a b');
+  assert.doesNotThrow(() => encodeURIComponent(cut('x'.repeat(23) + '😀😀', 24)));
 });
 
 test('transcripts: dedupes repeated assistant lines and keeps only label fields', async () => {

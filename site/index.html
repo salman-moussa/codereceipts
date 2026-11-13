@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Receipts · your AI coding sessions, itemized</title>
+<meta name="description" content="See what every Claude Code session really cost, where the tokens went, what the prompt cache saved and lost, and trim noisy output with savings you can prove. Local, free, open source.">
+<meta property="og:title" content="Receipts · your AI coding sessions, itemized">
+<meta property="og:description" content="Real cost per session, cache-miss forensics, a live cache countdown, and a lossless output trimmer. Runs locally.">
+<meta property="og:image" content="card.png">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f3f1ea;
+  --surface: #fbfaf6;
+  --ink: #121212;
+  --ink-2: #4d4c48;
+  --ink-3: #7b7a74;
+  --line: #dedbd0;
+  --good: #0a7f0a;
+  --bad: #c0392b;
+  --link: #1f63b8;
+  --term: #16161a;
+  --term-ink: #e9e7e1;
+  --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --bg: #111110;
+    --surface: #1a1a18;
+    --ink: #f0eee8;
+    --ink-2: #c4c2b8;
+    --ink-3: #8e8c84;
+    --line: #2d2c29;
+    --good: #46c246;
+    --bad: #ec6b5e;
+    --link: #6ea8f0;
+    --term: #0b0b0c;
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 24px; }
+@media (max-width: 600px) { .wrap { padding: 0 16px; } body { font-size: 16px; } }
+
+nav { display: flex; justify-content: space-between; align-items: center; padding: 22px 0; }
+.mark { font: 700 14px/1 var(--mono); letter-spacing: 0.34em; color: var(--ink); }
+nav .links { display: flex; gap: 22px; font-size: 15px; }
+nav .links a { color: var(--ink-2); }
+
+.hero { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 56px; align-items: center; padding: 48px 0 72px; }
+@media (max-width: 920px) { .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 24px; } }
+h1 { font-size: clamp(38px, 5.4vw, 60px); line-height: 1.04; letter-spacing: -0.025em; margin: 0 0 20px; }
+.lede { font-size: 19px; color: var(--ink-2); max-width: 540px; margin: 0 0 28px; }
+@media (max-width: 600px) { .lede { font-size: 17px; } }
+
+.cmd { display: inline-flex; align-items: center; gap: 14px; background: var(--term); color: var(--term-ink); border-radius: 10px; padding: 12px 12px 12px 18px; font: 16px var(--mono); max-width: 100%; }
+.cmd span::before { content: '$ '; color: #8f8d86; }
+.cmd button { font: 500 13px var(--sans); background: #2b2b30; color: var(--term-ink); border: 0; border-radius: 7px; padding: 8px 12px; cursor: pointer; }
+.cmd button:hover { background: #3a3a40; }
+.cmd button:focus-visible, .copy:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.sub-cta { margin-top: 14px; font-size: 14.5px; color: var(--ink-3); }
+
+.paper {
+  background: #fbfaf6;
+  color: #1b1b1b;
+  font: 12.5px/1.55 var(--mono);
+  padding: 30px 26px 26px;
+  width: 100%;
+  max-width: 440px;
+  justify-self: center;
+  position: relative;
+  box-shadow: 0 30px 60px -30px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.06);
+  --zz: linear-gradient(135deg, transparent 6px, #fbfaf6 0) 0 0 / 12px 12px repeat-x, linear-gradient(-135deg, transparent 6px, #fbfaf6 0) 0 0 / 12px 12px repeat-x;
+}
+.paper::before, .paper::after { content: ''; position: absolute; left: 0; right: 0; height: 12px; }
+.paper::before { top: -12px; background: linear-gradient(45deg, transparent 33.3%, #fbfaf6 33.3%, #fbfaf6 66.6%, transparent 66.6%) 0 0 / 12px 24px repeat-x; background-position: 0 6px; }
+.paper::after { bottom: -12px; background: linear-gradient(-45deg, transparent 33.3%, #fbfaf6 33.3%, #fbfaf6 66.6%, transparent 66.6%) 0 0 / 12px 24px repeat-x; background-position: 0 -6px; }
+.paper pre { margin: 0; white-space: pre; overflow: hidden; font: inherit; }
+.paper .g { color: #0a7f0a; }
+.paper .r { color: #b4322a; }
+.paper .d { color: #77756e; }
+.paper b { font-weight: 700; }
+@media (max-width: 480px) { .paper { font-size: 10.4px; padding: 24px 14px 20px; } }
+
+section { padding: 64px 0; border-top: 1px solid var(--line); }
+.kicker { font: 600 12px/1 var(--mono); letter-spacing: 0.24em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 14px; }
+h2 { font-size: clamp(28px, 3.4vw, 38px); line-height: 1.12; letter-spacing: -0.02em; margin: 0 0 14px; max-width: 760px; }
+.intro { color: var(--ink-2); max-width: 680px; margin: 0 0 36px; }
+
+.feature { display: grid; grid-template-columns: 0.9fr 1.1fr; gap: 48px; align-items: center; padding: 28px 0; }
+.feature + .feature { border-top: 1px dashed var(--line); }
+@media (max-width: 860px) { .feature { grid-template-columns: 1fr; gap: 20px; } }
+.feature h3 { font-size: 22px; margin: 0 0 10px; letter-spacing: -0.01em; }
+.feature p { color: var(--ink-2); margin: 0 0 10px; }
+.feature .num { font: 600 13px var(--mono); color: var(--ink-3); margin-bottom: 8px; }
+
+.term { background: var(--term); color: var(--term-ink); border-radius: 12px; padding: 18px 20px; font: 13.5px/1.6 var(--mono); overflow-x: auto; }
+.term pre { margin: 0; font: inherit; white-space: pre; }
+.term .g { color: #5fd35f; }
+.term .r { color: #f2786c; }
+.term .y { color: #f0c04a; }
+.term .d { color: #8f8d86; }
+@media (max-width: 600px) { .term { font-size: 11.5px; padding: 14px; } }
+
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 600px) { .compare { grid-template-columns: 1fr; } }
+.compare .label { font: 600 12px var(--mono); color: var(--ink-3); margin: 0 0 6px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+.card h4 { margin: 0 0 6px; font-size: 16.5px; }
+.card p { margin: 0; color: var(--ink-2); font-size: 15px; }
+
+.install { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 900px) { .install { grid-template-columns: 1fr; } }
+.install .card code { display: block; margin-top: 12px; background: var(--term); color: var(--term-ink); padding: 10px 12px; border-radius: 8px; font: 13px/1.6 var(--mono); white-space: pre-wrap; word-break: break-all; }
+
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 40px; }
+@media (max-width: 760px) { .facts { grid-template-columns: 1fr; } }
+.facts div { border-left: 2px solid var(--line); padding-left: 16px; color: var(--ink-2); font-size: 15.5px; }
+.facts b { color: var(--ink); display: block; margin-bottom: 2px; }
+
+footer { border-top: 1px solid var(--line); padding: 32px 0 48px; color: var(--ink-3); font-size: 14px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <nav>
+    <div class="mark">RECEIPTS</div>
+    <div class="links"><a href="#features">Features</a><a href="#install">Install</a><a href="https://github.com/salman-moussa/tokenreceipts">GitHub</a></div>
+  </nav>
+
+  <div class="hero">
+    <div>
+      <h1>Your AI coding sessions, itemized.</h1>
+      <p class="lede">Receipts reads the transcripts Claude Code already keeps on your machine and shows what every session really cost, where the tokens went, what the prompt cache saved, and what you lost when it went cold. Then it helps you pay less, and proves it.</p>
+      <div class="cmd"><span id="cmdText">npx tokenreceipts</span><button type="button" data-copy="npx tokenreceipts">Copy</button></div>
+      <div class="sub-cta">Free and open source. Runs locally. No account, no upload.</div>
+    </div>
+    <div class="paper" aria-label="Example receipt">
+<pre id="hero-receipt">               <b>R E C E I P T S</b>
+         <span class="d">for your AI coding sessions</span>
+==============================================
+SESSION ............. Storefront platform
+STARTED ..................... 2026-09-20 00:30
+DURATION ............................. 36d 13h
+API CALLS ............................... 3.4K
+----------------------------------------------
+Opus 5.5  x1.4K ...................... $213.33
+Fable 5.1  x685 ...................... $169.91
+Sonnet 5  x1.4K ...................... $154.00
+----------------------------------------------
+Main conversation .................... $387.85
+19 subagents ......................... $149.39
+----------------------------------------------
+Output  2.9M tok ...................... $92.86
+Cache writes  25.3M tok .............. $176.29
+Cache reads  1.28B tok ............... $268.06
+Fresh input  6.9K tok .................. $0.03
+==============================================
+<b>TOTAL ................................ $537.24</b>
+==============================================
+<span class="g">Caching saved you (98% hits) .......... $5,008</span>
+<span class="r">Lost to cache misses .................. $93.94</span>
+<span class="d">  23x cache expired (long break) ...... $80.89
+  3x prompt or tools changed .......... $13.05</span>
+Peak context ........................ 968K tok
+==============================================</pre>
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="kicker">What it finds</div>
+    <h2>The parts of your bill nobody shows you.</h2>
+    <p class="intro">Every turn re-sends the whole conversation. When the prompt cache is warm that costs little. When it goes cold, you pay to write it all again. Most of the waste hides there, and in noisy tool output that sits in context for the rest of the session.</p>
+
+    <div class="feature">
+      <div>
+        <div class="num">01 · Cache-miss forensics</div>
+        <h3>Know why the cache broke, and what it cost.</h3>
+        <p>Receipts finds every call that rebuilt a cache it could have read, names the likely cause and prices the difference.</p>
+        <p>Long break, model switch, prompt or MCP tools changed, or an expected compaction.</p>
+      </div>
+      <div class="term"><pre><span class="r">Lost to cache misses .................. $93.94</span>
+<span class="d">  23x cache expired (long break) ...... $80.89
+  3x prompt or tools changed .......... $13.05
+  3x compaction (expected) ............. $0.00</span>
+
+HOW TO PAY LESS NEXT TIME
+- $80.89 went to rebuilding the cache after 23
+  long breaks. Run /compact before you step
+  away, or /clear when you start new work.</pre></div>
+    </div>
+
+    <div class="feature">
+      <div>
+        <div class="num">02 · Live cache countdown</div>
+        <h3>See the clock before you step away.</h3>
+        <p>The status line shows how long your cache stays warm and what the next turn will cost if it expires. Plus spend, burn rate and context use.</p>
+        <p style="font-size:14px;color:var(--ink-3)">Example lines: a warm cache, then a cold one.</p>
+      </div>
+      <div class="term"><pre>$4.12 <span class="d">$6.20/h</span> <span class="d">│</span> cache 94% <span class="g">warm 3:41</span> <span class="d">· cold costs $1.80 │</span> ctx 38% <span class="d">│</span> <span class="g">trimmed 42K tok</span>
+
+$9.80 <span class="d">$5.10/h</span> <span class="d">│</span> cache 91% <span class="r">cold · next turn +$2.40</span> <span class="d">│</span> <span class="y">ctx 64%</span></pre></div>
+    </div>
+
+    <div class="feature">
+      <div>
+        <div class="num">03 · Lossless trimmer</div>
+        <h3>Drop the noise. Keep every error. Lose nothing.</h3>
+        <p>A hook shrinks test runs, installs, builds and logs before Claude reads them. Passing lines collapse, every failure and stack trace stays, and the full output is saved to disk with its path shown to Claude.</p>
+        <p>A real run of 401 tests with one failure: <b>3,808 tokens down to 305</b>.</p>
+      </div>
+      <div class="compare">
+        <div><div class="label">What Claude reads</div><div class="term"><pre><span class="d">✔ renders product card 0
+✔ renders product card 1
+  … 297 similar lines
+✔ renders product card 299</span>
+<span class="r">✖ total includes tax</span>
+<span class="r">  AssertionError: 100 !== 110</span>
+<span class="d">    at cart.test.js:5:41
+ℹ pass 400
+ℹ fail 1</span>
+<span class="g">[receipts] trimmed ~3.8K -> ~305 tokens</span></pre></div></div>
+        <div><div class="label">What it counts</div><div class="term"><pre>raw output ......... 3,808 tok
+kept ................. 305 tok
+<span class="g">saved .............. 3,503 tok</span>
+<span class="d">full log: ~/.tokenreceipts/raw/</span>
+
+<span class="d">A token kept out early is not
+re-read by any later turn, up to
+the next compaction. Receipts
+prices each read that never
+happened.</span></pre></div></div>
+      </div>
+    </div>
+
+    <div class="feature">
+      <div>
+        <div class="num">04 · A/B bench</div>
+        <h3>Test any plugin's claims on your own repo.</h3>
+        <p>Run the same task with and without a plugin in throwaway git worktrees. Compare real cost, turns, time and whether your tests pass.</p>
+      </div>
+      <div class="term"><pre><span class="d">$</span> receipts bench \
+    --task "fix the failing test" \
+    --plugin ../some-plugin \
+    --check "npm test" \
+    --runs 3 --model haiku</pre></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">Everything in the box</div>
+    <h2>One small tool, zero dependencies.</h2>
+    <p class="intro">Install it as a CLI, a Claude Code plugin, or both.</p>
+    <div class="grid">
+      <div class="card"><h4>Session receipt</h4><p>Spend by model and subagent, the four billing meters, cache savings and losses, and three tips computed from your own numbers.</p></div>
+      <div class="card"><h4>Context X-ray</h4><p>A page with context size call by call, every miss marked, the running cost, and what filled the context: which tool, which file, how many times.</p></div>
+      <div class="card"><h4>Week view</h4><p>Spend across every project by day, folder and model, with your most expensive sessions and the biggest leak.</p></div>
+      <div class="card"><h4>Share card</h4><p>A till-style image of your totals. Numbers only, never code or paths.</p></div>
+      <div class="card"><h4>Scout agent</h4><p>A read-only search subagent on Haiku, so finding files does not burn your main model.</p></div>
+      <div class="card"><h4>Honest by design</h4><p>Exact token counts from the API usage data, list prices per model, and every estimate labelled as one.</p></div>
+    </div>
+  </section>
+
+  <section id="install">
+    <div class="kicker">Install</div>
+    <h2>Pick one. Takes a minute.</h2>
+    <p class="intro">Requires Node 20 or newer and Claude Code.</p>
+    <div class="install">
+      <div class="card"><h4>Just look</h4><p>Print the receipt for your latest session. Nothing is installed.</p><code>npx tokenreceipts</code></div>
+      <div class="card"><h4>Status line + trimmer</h4><p>Adds both to Claude Code. Your settings are backed up first.</p><code>npx tokenreceipts install</code></div>
+      <div class="card"><h4>Claude Code plugin</h4><p>Trimmer, the receipt skill and the scout agent.</p><code>/plugin marketplace add salman-moussa/tokenreceipts
+/plugin install tokenreceipts@tokenreceipts</code></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="kicker">How it counts</div>
+    <h2>Numbers you can check.</h2>
+    <div class="facts">
+      <div><b>From your own transcripts</b>Claude Code logs the exact token usage of every API call. Receipts reads those files and counts each call once.</div>
+      <div><b>List prices, per model</b>Fresh input, cache writes at 1.25x (5-minute) or 2x (1-hour), cache reads priced per model, output, fast mode at 2x. Subagents included.</div>
+      <div><b>Conservative savings</b>Trim savings count only what Claude would really have read, and stop at the next compaction.</div>
+      <div><b>Private</b>No network calls. Reads <code>~/.claude/projects</code>, writes to <code>~/.tokenreceipts</code>. Plans and discounts can make your real bill differ.</div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Receipts · MIT licensed · Made by Salman Moussa</span>
+    <a href="https://github.com/salman-moussa/tokenreceipts">github.com/salman-moussa/tokenreceipts</a>
+  </footer>
+</div>
+<script>
+document.querySelectorAll('[data-copy]').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var text = b.getAttribute('data-copy');
+    var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, done); else done();
+  });
+});
+</script>
+</body>
+</html>

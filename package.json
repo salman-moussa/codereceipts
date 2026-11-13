@@ -1,0 +1,47 @@
+{
+  "name": "tokenreceipts",
+  "version": "0.1.0",
+  "description": "Receipts for your AI coding sessions: what Claude Code really cost, where the tokens went, and a trimmer that proves what it saves.",
+  "type": "module",
+  "bin": {
+    "receipts": "cli/receipts.js",
+    "tokenreceipts": "cli/receipts.js"
+  },
+  "files": [
+    "cli",
+    "src",
+    ".claude-plugin",
+    "hooks",
+    "agents",
+    "skills",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "lint": "eslint .",
+    "typecheck": "tsc -p jsconfig.json",
+    "check": "npm run lint && npm run typecheck && npm test"
+  },
+  "keywords": [
+    "claude-code",
+    "tokens",
+    "cost",
+    "prompt-caching",
+    "ai-agents",
+    "llm",
+    "plugin"
+  ],
+  "author": "Salman Moussa",
+  "license": "MIT",
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^22.20.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.14.0",
+    "typescript": "^5.9.3"
+  }
+}

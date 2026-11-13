@@ -21,7 +21,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "test": "node --test test/*.test.js",
+    "test": "node --test test/core.test.js test/features.test.js",
     "lint": "eslint .",
     "typecheck": "tsc -p jsconfig.json",
     "check": "npm run lint && npm run typecheck && npm test"

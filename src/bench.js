@@ -1,5 +1,5 @@
 // A/B test on your own repo: run the same task with plain Claude Code and
-// with each plugin, in throwaway git worktrees, and compare what each arm
+// with each plugin, in throwaway local clones, and compare what each arm
 // really cost, how many turns it took, and whether your check passed.
 import { parseArgs } from 'node:util';
 import { spawnSync } from 'node:child_process';
@@ -16,7 +16,7 @@ const HELP = `receipts bench - A/B test plugins on your own repo
 Usage
   receipts bench --task "<prompt>" [--plugin <dir>]... [options]
 
-Runs the task once per arm in a fresh git worktree of the current repo:
+Runs the task once per arm in a fresh local clone of the current repo (no remotes):
   baseline      plain Claude Code (your user plugins, hooks and MCP servers off)
   <plugin>      the same, plus --plugin-dir <dir>
 
@@ -25,9 +25,9 @@ Options
   --plugin <dir>      a plugin to test; repeat for more arms
   --runs <n>          runs per arm (default 1)
   --model <id>        model for every run (default: your Claude Code default)
-  --check "<cmd>"     shell command run in the worktree after each run; exit 0 = pass
+  --check "<cmd>"     shell command run in the clone after each run; exit 0 = pass
   --budget <usd>      spend cap per run (default 2)
-  --keep              keep the worktrees for inspection
+  --keep              keep the clones for inspection
   --json              print raw results
 
 Runs spend real money on your account. Start with a small model and --runs 1.`;
@@ -66,21 +66,22 @@ export async function bench(argv) {
     for (let r = 1; r <= runs; r++) {
       for (const arm of arms) {
         const dir = path.join(root, `${arm.name}-${r}`);
-        git(['worktree', 'add', '--detach', dir, 'HEAD'], repo);
+        // A separate clone, not a worktree: a worktree shares .git, so the run
+        // could move real branches or push. With origin removed it cannot.
+        git(['clone', '--quiet', '--local', '--no-hardlinks', repo, dir], root);
+        git(['remote', 'remove', 'origin'], dir);
         process.stderr.write(`[${arm.name} ${r}/${runs}] running...`);
         const res = runOnce(dir, /** @type {string} */ (values.task), arm.plugin, values.model, Number(values.budget) || 2);
         const pass = values.check ? spawnSync(values.check, { cwd: dir, shell: true, stdio: 'ignore' }).status === 0 : null;
         const extra = await sessionStats(res.sessionId);
         results.push({ arm: arm.name, run: r, cost: res.cost, turns: res.turns, ms: res.ms, pass, error: res.error, ...extra });
         process.stderr.write(` ${usd(res.cost)}, ${res.turns} turns${pass == null ? '' : pass ? ', check passed' : ', check FAILED'}${res.error ? `, ${res.error}` : ''}\n`);
-        if (!values.keep) git(['worktree', 'remove', '--force', dir], repo);
+        if (!values.keep) removeDir(dir);
       }
     }
   } finally {
-    if (!values.keep) {
-      git(['worktree', 'prune'], repo);
-      fs.rmSync(root, { recursive: true, force: true });
-    }
+    if (!values.keep) removeDir(root);
+    else process.stderr.write(`Kept the run folders in ${root}\n`);
   }
 
   const summary = summarize(results, arms.map((a) => a.name));
@@ -98,7 +99,8 @@ function runOnce(dir, task, plugin, model, budget) {
   if (plugin) args.push('--plugin-dir', plugin);
   const t0 = Date.now();
   const p = spawnSync('claude', args, { cwd: dir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, timeout: 30 * 60_000 });
-  if (p.error) throw new Error(`could not run claude: ${p.error.message}. Is Claude Code installed and on PATH?`);
+  if (p.error && /** @type {any} */ (p.error).code === 'ENOENT') throw new Error('could not run claude. Is Claude Code installed and on PATH?');
+  if (p.error) return { cost: 0, turns: 0, ms: Date.now() - t0, sessionId: '', error: /** @type {any} */ (p.error).code === 'ETIMEDOUT' ? 'timed out after 30 minutes' : p.error.message };
   try {
     const out = JSON.parse(p.stdout);
     return { cost: out.total_cost_usd ?? 0, turns: out.num_turns ?? 0, ms: out.duration_ms ?? Date.now() - t0, sessionId: out.session_id || '', error: out.is_error ? String(out.result || out.terminal_reason || 'error').slice(0, 120) : '' };
@@ -158,6 +160,23 @@ export function renderBench(summary, task, model) {
   }
   L.push('='.repeat(W), 'Averages per run. Costs are what Claude Code reported. Small samples', 'are noisy: use --runs 3 or more before trusting a difference.', '');
   return L.join('\n');
+}
+
+/** Git marks pack files read-only on Windows, so make them writable before deleting. */
+function removeDir(/** @type {string} */ dir) {
+  const walk = (/** @type {string} */ d) => {
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) walk(p);
+      else fs.chmodSync(p, 0o666);
+    }
+  };
+  try {
+    walk(dir);
+  } catch {
+    /* already gone */
+  }
+  fs.rmSync(dir, { recursive: true, force: true, maxRetries: 3 });
 }
 
 /** @param {string[]} args @param {string} cwd */
